@@ -1,0 +1,7 @@
+rules:
+  - id: py-unsafe-html-echo
+    languages: [python]
+    severity: WARNING
+    message: "Possible unsafe HTML echo in response."
+    pattern: |
+      HTMLResponse(f"...{ $X }...")

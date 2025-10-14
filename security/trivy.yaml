@@ -1,0 +1,5 @@
+format: "json"
+ignore-unfixed: true
+vuln-type:
+  - os
+  - library

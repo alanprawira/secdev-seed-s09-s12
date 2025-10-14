@@ -1,0 +1,36 @@
+name: S12 - IaC & Container Security
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'Dockerfile'
+      - 'iac/**'
+      - '.github/workflows/ci-s12-iac-container.yml'
+jobs:
+  s12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure evidence dirs
+        run: mkdir -p EVIDENCE/S12
+
+      - name: Build image
+        run: docker build -t s09s12-app:ci .
+
+      - name: Hadolint Dockerfile (JSON)
+        run: |
+          docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > EVIDENCE/S12/hadolint.json || true
+
+      - name: Checkov (iac/)
+        run: |
+          docker run --rm -v $PWD:/src bridgecrew/checkov:latest -d /src/iac -o json > EVIDENCE/S12/checkov.json || true
+
+      - name: Trivy image (JSON)
+        run: |
+          docker run --rm -v $PWD:/work aquasec/trivy:latest image --format json --output /work/EVIDENCE/S12/trivy.json --ignore-unfixed s09s12-app:ci || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: S12_EVIDENCE
+          path: EVIDENCE/S12

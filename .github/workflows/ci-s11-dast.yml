@@ -1,0 +1,33 @@
+name: S11 - DAST (ZAP)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'app/**'
+      - '.github/workflows/ci-s11-dast.yml'
+jobs:
+  s11:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure evidence dirs
+        run: mkdir -p EVIDENCE/S11
+
+      - name: Setup Python & run app
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - run: uvicorn app.main:app --host 0.0.0.0 --port 8080 &
+      - run: timeout 10 bash -c 'until curl -sf http://localhost:8080/healthz; do sleep 1; done'
+
+      - name: ZAP Baseline
+        run: |
+          docker run --rm --network host -v $PWD:/zap/wrk owasp/zap2docker-stable zap-baseline.py                 -t http://localhost:8080                 -r zap_baseline.html -J zap_baseline.json -d || true
+          mv zap_baseline.* EVIDENCE/S11/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: S11_EVIDENCE
+          path: EVIDENCE/S11

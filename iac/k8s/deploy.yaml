@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s09s12-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: s09s12-web }
+  template:
+    metadata:
+      labels: { app: s09s12-web }
+    spec:
+      containers:
+        - name: web
+          image: s09s12-app:latest # intentionally 'latest'
+          ports: [{ containerPort: 8080 }]
+          securityContext:
+            runAsUser: 0            # intentionally root
+          resources: {}             # no limits/requests

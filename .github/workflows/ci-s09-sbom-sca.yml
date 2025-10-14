@@ -1,0 +1,32 @@
+name: S09 - SBOM & SCA
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**/*.py'
+      - 'requirements.txt'
+      - '.github/workflows/ci-s09-sbom-sca.yml'
+jobs:
+  s09:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure evidence dirs
+        run: mkdir -p EVIDENCE/S09
+
+      - name: Generate SBOM (Syft CycloneDX)
+        run: |
+          docker run --rm -v $PWD:/work -w /work anchore/syft:latest packages dir:. -o cyclonedx-json > EVIDENCE/S09/sbom.json
+
+      - name: SCA Scan (Grype)
+        run: |
+          set -e
+          docker run --rm -v $PWD:/work -w /work anchore/grype:latest sbom:/work/EVIDENCE/S09/sbom.json -o json > EVIDENCE/S09/sca_report.json
+          echo "# SCA summary" > EVIDENCE/S09/sca_summary.md
+          jq '[.matches[].vulnerability.severity] | group_by(.) | map({(.[0]): length}) | add' EVIDENCE/S09/sca_report.json >> EVIDENCE/S09/sca_summary.md || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: S09_EVIDENCE
+          path: EVIDENCE/S09

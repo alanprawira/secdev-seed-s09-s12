@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>S09-S12 Seed</title>
+  </head>
+  <body>
+    <h1>Seed for S09-S12</h1>
+    <p>Health: <a href="/healthz">/healthz</a></p>
+
+    <form method="get" action="/">
+      <label>Query "q": <input type="text" name="q" value="{{ q }}"/></label>
+      <button type="submit">Go</button>
+    </form>
+
+    <p>Try echo: <a href="/echo?x=%3Cscript%3Ealert(1)%3C/script%3E">/echo?x=&lt;script&gt;alert(1)&lt;/script&gt;</a></p>
+  </body>
+</html>
