@@ -57,7 +57,7 @@ jobs:
         if: always()
         run: |
           echo "Remove old SBOM and SCA reports"
-          find EVIDENCE/S09 -type f \( -name "*.json" -o -name "*.md" \) -mtime +30 -print 
+          find EVIDENCE/S09 -type f \( -name "*.json" -o -name "*.md" \) -mtime +30 -print -delete
           echo "Owner: ${{ github.actor }}" > EVIDENCE/S09/cleanup_metadata.txt
           echo "Deletion date: $(date -u)" >> EVIDENCE/S09/cleanup_metadata.txt
           echo "Reason: Routine cleanup of outdated scan reports" >> EVIDENCE/S09/cleanup_metadata.txt
