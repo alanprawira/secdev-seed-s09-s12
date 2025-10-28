@@ -6,7 +6,6 @@ import html
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 
-
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, q: str = ""):
     safe_q = html.escape(q, quote=True)
