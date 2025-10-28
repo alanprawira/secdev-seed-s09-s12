@@ -1,6 +1,5 @@
 .venv/
 __pycache__/
-/EVIDENCE
 *.pyc
 .env
 .DS_Store
