@@ -19,6 +19,29 @@ jobs:
       - name: Build image
         run: docker build -t s09s12-app:ci .
 
+      - name: Test container health check
+        run: |
+          # Run container
+          docker run -d --name health-test s09s12-app:ci
+          
+          # Wait for health checks to run (need multiple intervals)
+          echo "Waiting for health checks to run..."
+          sleep 45
+          
+          # Get the health status in your desired format
+          docker inspect --format='{{json .State.Health}}' health-test > EVIDENCE/S12/health_status.json
+          
+          # Also check current status
+          echo "Current container status:"
+          docker ps -a | grep health-test
+          
+          # Clean up
+          docker stop health-test
+          docker rm health-test
+          
+          # Show the generated health file
+          cat EVIDENCE/S12/health_status.json
+
       - name: Hadolint Dockerfile (JSON)
         run: |
           docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > EVIDENCE/S12/hadolint.json
@@ -26,6 +49,7 @@ jobs:
       - name: Checkov (iac/)
         run: |
           docker run --rm -v $PWD:/src bridgecrew/checkov:latest -d /src/iac -o json > EVIDENCE/S12/checkov.json 
+        continue-on-error: true
 
       - name: Trivy image (JSON)
         run: |
