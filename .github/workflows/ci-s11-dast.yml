@@ -22,10 +22,15 @@ jobs:
       - run: uvicorn app.main:app --host 0.0.0.0 --port 8080 &
       - run: timeout 10 bash -c 'until curl -sf http://localhost:8080/healthz; do sleep 1; done'
 
+      - name: Prepare ZAP workdir
+        run: |
+          mkdir -p zap-work
+          chmod 777 zap-work
+          
       - name: ZAP Baseline
         run: |
-          docker run --rm --network host -v $PWD:/zap/wrk owasp/zap2docker-stable zap-baseline.py                 -t http://localhost:8080                 -r zap_baseline.html -J zap_baseline.json -d || true
-          mv zap_baseline.* EVIDENCE/S11/ || true
+          docker run --rm --network host -v $PWD/zap-work:/zap/wrk zaproxy/zap-stable zap-baseline.py -t http://localhost:8080 -r zap_baseline.html -J zap_baseline.json-d -I -m 3
+          mv zap-work/zap_baseline.* EVIDENCE/S11/ || true
 
       - uses: actions/upload-artifact@v4
         with:

@@ -5,6 +5,7 @@ on:
     paths:
       - 'Dockerfile'
       - 'iac/**'
+      - 'requirements.txt'
       - '.github/workflows/ci-s12-iac-container.yml'
 jobs:
   s12:
@@ -20,17 +21,18 @@ jobs:
 
       - name: Hadolint Dockerfile (JSON)
         run: |
-          docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > EVIDENCE/S12/hadolint.json || true
+          docker run --rm -i hadolint/hadolint hadolint -f json - < Dockerfile > EVIDENCE/S12/hadolint.json
 
       - name: Checkov (iac/)
         run: |
-          docker run --rm -v $PWD:/src bridgecrew/checkov:latest -d /src/iac -o json > EVIDENCE/S12/checkov.json || true
+          docker run --rm -v $PWD:/src bridgecrew/checkov:latest -d /src/iac -o json > EVIDENCE/S12/checkov.json 
 
       - name: Trivy image (JSON)
         run: |
-          docker run --rm -v $PWD:/work aquasec/trivy:latest image --format json --output /work/EVIDENCE/S12/trivy.json --ignore-unfixed s09s12-app:ci || true
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/work aquasec/trivy:latest image --format json --output /work/EVIDENCE/S12/trivy.json --ignore-unfixed s09s12-app:ci --severity HIGH,CRITICAL --exit-code 1
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: S12_EVIDENCE
           path: EVIDENCE/S12
