@@ -6,26 +6,16 @@ on:
       - '**/*.py'
       - 'requirements.txt'
       - '.github/workflows/ci-s09-sbom-sca.yml'
-
 jobs:
   s09:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      actions: read
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
       - name: Ensure evidence dirs
         run: mkdir -p EVIDENCE/S09
-
       - name: Generate SBOM (Syft CycloneDX)
         run: |
           docker run --rm -v $PWD:/work -w /work anchore/syft:latest packages dir:. --catalogers all -o cyclonedx-json > EVIDENCE/S09/sbom.json 
-
       - name: Generate License Summary
         run: |
           jq -r '
@@ -40,44 +30,18 @@ jobs:
           | uniq -c \
           | awk '{ print "{\"license\":\"" $2 "\",\"count\":" $1 "}" }' \
           | jq -s '.' > EVIDENCE/S09/license_summary.json
-  
           {
             echo "# License Summary"
             echo ""
             jq -r '.[] |  .license + ": " + (.count|tostring)' EVIDENCE/S09/license_summary.json
           } > EVIDENCE/S09/license_summary.md
-
       - name: SCA Scan (Grype)
         run: |
           set -e
           docker run --rm -v $PWD:/work -w /work anchore/grype:latest sbom:/work/EVIDENCE/S09/sbom.json -o json > EVIDENCE/S09/sca_report.json --fail-on high
           echo "# SCA summary" > EVIDENCE/S09/sca_summary.md
           jq '[.matches[].vulnerability.severity] | group_by(.) | map({(.[0]): length}) | add' EVIDENCE/S09/sca_report.json >> EVIDENCE/S09/sca_summary.md || true
-
       - uses: actions/upload-artifact@v4
         with:
           name: S09_EVIDENCE
           path: EVIDENCE/S09
-
-      - name: Cleanup old SBOM & SCA reports
-        if: always()
-        run: |
-          echo "Remove old SBOM and SCA reports"
-          find EVIDENCE/S09 -type f \( -name "*.json" -o -name "*.md" \) -mtime +30 -print -delete
-          echo "Owner: ${{ github.actor }}" > EVIDENCE/S09/cleanup_metadata.txt
-          echo "Deletion date: $(date -u)" >> EVIDENCE/S09/cleanup_metadata.txt
-          echo "Reason: Routine cleanup of outdated scan reports" >> EVIDENCE/S09/cleanup_metadata.txt
-
-      # AUTO-COMMIT STEP
-      - name: Commit and push evidence
-        if: always()
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add EVIDENCE/
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "ci: Update S09 SBOM & SCA evidence [skip ci]"
-            git push
-          fi
