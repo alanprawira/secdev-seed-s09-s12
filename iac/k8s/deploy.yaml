@@ -12,8 +12,10 @@ spec:
     spec:
       containers:
         - name: web
-          image: s09s12-app:latest # intentionally 'latest'
+          image: s09s12-app::v1.0.0 
           ports: [{ containerPort: 8080 }]
           securityContext:
-            runAsUser: 0            # intentionally root
+            runAsUser: 1000
+            runAsNonRoot: true   
+            allowPrivilegeEscalation: false        
           resources: {}             # no limits/requests
