@@ -6,7 +6,6 @@ import html
 app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 
-API_KEY = "sk_test_1234567890SECRET"
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, q: str = ""):
